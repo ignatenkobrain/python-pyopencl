@@ -1,8 +1,8 @@
 %global srcname pyopencl
 
 Name:           python-%{srcname}
-Version:        2015.1
-Release:        4%{?dist}
+Version:        2015.2
+Release:        1%{?dist}
 Summary:        Python wrapper for OpenCL
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1219819#c16
@@ -23,18 +23,22 @@ Patch0:         0001-use-system-compyte.patch
 Patch1:         0002-disable-executing-git-submodule.patch
 # Have not asked upstream, but they want to enforce CFLAGS/LDFLAGS
 Patch2:         0003-don-t-hack-distutils-with-C-LDFLAGS.patch
-# License clarification
-# https://github.com/pyopencl/pyopencl/commit/67379e112d3366c818389623996d829c6c25a5ce
-Patch3:         0001-Make-separate-LICENSE-file-Fix-93.patch
 
+# pyopencl/cl/pyopencl-bessel-[j,y].cl and
+# pyopencl/cl/pyopencl-eval-tbl.cl contain snippets taken from boost
+# and cephes. pyopencl/cl/pyopencl-airy.cl contains code taken from
+# cephes.
 Provides:       bundled(boost-math)
-Provides:       bundled(cephes)
+Provides:       bundled(cephes) = 2.8
+# pyopencl/cl/pyopencl-ranluxcl.cl contains a modified version of the
+# ranluxcl library
 Provides:       bundled(ranluxcl) = 1.3.1
 
 BuildRequires:  git-core
 BuildRequires:  boost-devel
 BuildRequires:  opencl-headers ocl-icd-devel
 BuildRequires:  atlas-devel blas-devel
+BuildRequires:  pkgconfig(libffi)
 BuildRequires:  pkgconfig(gl)
 # Testing requires opencl support
 BuildRequires:  pocl
@@ -49,21 +53,22 @@ API in a manner similar to the sister project `PyCUDA`.
 Summary:        Python 2 wrapper for OpenCL
 %{?python_provide:%python_provide python2-%{srcname}}
 BuildRequires:  python2-devel
-BuildRequires:  python-mako
 BuildRequires:  numpy
-BuildRequires:  boost-python
-BuildRequires:  boost-python-devel
 # Test deps
 BuildRequires:  scipy
+BuildRequires:  python-mako
 BuildRequires:  python2-compyte
 BuildRequires:  python2-pytools
 BuildRequires:  python2-pytest
 BuildRequires:  python-six
+BuildRequires:  python-cffi%{?_isa}
 Requires:       python2-compyte
 Requires:       python2-pytools
 Requires:       python2-pytest
 Requires:       python-decorator
 Requires:       python2-appdirs
+Requires:       python-mako
+Requires:       python-cffi%{?_isa}
 
 %description -n python2-%{srcname}
 PyOpenCL makes it possible to access GPUs and other massively 
@@ -75,21 +80,22 @@ API in a manner similar to the sister project `PyCUDA`.
 Summary:        Python 3 wrapper for OpenCL
 %{?python_provide:%python_provide python3-%{srcname}}
 BuildRequires:  python3-devel
-BuildRequires:  python3-mako
 BuildRequires:  python3-numpy
-BuildRequires:  boost-python3
-BuildRequires:  boost-python3-devel
 # Test deps
+BuildRequires:  python3-mako
 BuildRequires:  python3-compyte
 BuildRequires:  python3-scipy
 BuildRequires:  python3-pytools
 BuildRequires:  python3-pytest
 BuildRequires:  python3-six
+BuildRequires:  python3-cffi%{?_isa}
 Requires:       python3-compyte
 Requires:       python3-pytools
 Requires:       python3-pytest
 Requires:       python3-decorator
 Requires:       python3-appdirs
+Requires:       python3-mako
+Requires:       python3-cffi%{?_isa}
 
 %description -n python3-%{srcname}
 PyOpenCL makes it possible to access GPUs and other massively 
@@ -107,39 +113,36 @@ rm -f examples/{.gitignore,download-examples-from-wiki.py}
 # remove the sphinx-build leftovers
 #rm -rf html/.{doctrees,buildinfo}
 
+rm -rf %{py3dir}
+mkdir -p %{py3dir}
+cp -a . %{py3dir}
+
 %build
-%{__python2} configure.py \
-   --boost-inc-dir=%{_includedir}/boost \
-   --boost-lib-dir=%{_libdir} \
-   --boost-python-libname=boost_python \
-   --no-use-shipped-boost \
-   --cl-enable-gl
+%{__python2} configure.py --cl-enable-gl
 %py2_build
 
-rm -f siteconf.py
-
-%{__python3} configure.py \
-   --boost-inc-dir=%{_includedir}/boost \
-   --boost-lib-dir=%{_libdir} \
-   --boost-python-libname=boost_python3 \
-   --no-use-shipped-boost \
-   --cl-enable-gl
+pushd %{py3dir}
+%{__python3} configure.py --cl-enable-gl
 %py3_build
+popd
 
 %install
 %py2_install
+pushd %{py3dir}
 %py3_install
+popd
 
 find %{buildroot}%{python2_sitearch}/%{srcname} -name '*.so' -exec chmod 755 {} ';'
 find %{buildroot}%{python3_sitearch}/%{srcname} -name '*.so' -exec chmod 755 {} ';'
 
 %check
-# don't fail here due to fails on POCL: https://github.com/pyopencl/pyopencl/issues/94
 pushd test/
   export PYTHONPATH=%{buildroot}%{python2_sitearch}
-  find -name '*.py' -exec %{__python2} {} ';' || :
+  find -name '*.py' -exec py.test-%{python2_version} -v {} ';'
+popd
+pushd %{py3dir}/test/
   export PYTHONPATH=%{buildroot}%{python3_sitearch}
-  find -name '*.py' -exec %{__python3} {} ';' || :
+  find -name '*.py' -exec py.test-%{python3_version} -v {} ';'
 popd
 
 %files -n python2-%{srcname}
@@ -155,6 +158,13 @@ popd
 %{python3_sitearch}/%{srcname}-%{version}-*egg-info
 
 %changelog
+* Thu Nov 05 2015 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 2015.2-1
+- Update to 2015.2
+- Add some description to bundled libs providing
+- Provide exact version of bundled cephes
+- Force tests passed
+- Fixed dependencies list
+
 * Wed Nov 04 2015 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 2015.1-4
 - Fixed license tag
 - Run tests

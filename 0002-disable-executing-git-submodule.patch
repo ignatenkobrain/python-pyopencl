@@ -1,29 +1,28 @@
-From 91df659bf1f0d4d5931efcaf728edad98c046735 Mon Sep 17 00:00:00 2001
+From 11c02f11f54a79a005c83289bd552bf7cf8421f4 Mon Sep 17 00:00:00 2001
 From: Igor Gnatenko <i.gnatenko.brain@gmail.com>
 Date: Sat, 24 Oct 2015 12:55:47 +0200
 Subject: [PATCH 2/3] disable executing git submodule
 
 Signed-off-by: Igor Gnatenko <i.gnatenko.brain@gmail.com>
 ---
- setup.py | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ setup.py | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/setup.py b/setup.py
-index 9e37c34..3f586f0 100644
+index 4a1073e..8a52e06 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -60,10 +60,7 @@ def get_config_schema():
+@@ -88,9 +88,7 @@ def get_config_schema():
  
  def main():
-     from aksetup_helper import (hack_distutils, get_config, setup,
--            NumpyExtension, set_up_shipped_boost_if_requested,
+     from setuptools import find_packages
+-    from aksetup_helper import (hack_distutils, get_config, setup,
 -            check_git_submodules)
--
 -    check_git_submodules()
-+            NumpyExtension, set_up_shipped_boost_if_requested)
++    from aksetup_helper import (hack_distutils, get_config, setup)
  
      hack_distutils()
      conf = get_config(get_config_schema(),
 -- 
-2.6.2
+2.4.3
 

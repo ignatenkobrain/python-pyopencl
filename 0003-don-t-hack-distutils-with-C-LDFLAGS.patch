@@ -1,4 +1,4 @@
-From 64bfe9734f56bf8ff73933d8f27530f4c7050228 Mon Sep 17 00:00:00 2001
+From 9f12b578c27c93a76a0b99545d2ba9d36ec0c633 Mon Sep 17 00:00:00 2001
 From: Igor Gnatenko <i.gnatenko.brain@gmail.com>
 Date: Sat, 24 Oct 2015 13:11:13 +0200
 Subject: [PATCH 3/3] don't hack distutils with C/LDFLAGS
@@ -9,17 +9,17 @@ Signed-off-by: Igor Gnatenko <i.gnatenko.brain@gmail.com>
  1 file changed, 1 deletion(-)
 
 diff --git a/setup.py b/setup.py
-index 3f586f0..f6c98fc 100644
+index 8a52e06..7f577d9 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -62,7 +62,6 @@ def main():
-     from aksetup_helper import (hack_distutils, get_config, setup,
-             NumpyExtension, set_up_shipped_boost_if_requested)
+@@ -90,7 +90,6 @@ def main():
+     from setuptools import find_packages
+     from aksetup_helper import (hack_distutils, get_config, setup)
  
 -    hack_distutils()
      conf = get_config(get_config_schema(),
              warn_about_no_config=False)
-     EXTRA_OBJECTS, EXTRA_DEFINES = \
+ 
 -- 
-2.6.2
+2.4.3
 
